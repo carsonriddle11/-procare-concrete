@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>ProCare Concrete</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+body{font-family:Arial;padding:15px;background:#f4f4f4}
+h1{color:#222}
+input,textarea,button,select{width:100%;padding:12px;margin:6px 0;font-size:16px}
+.card{background:white;padding:12px;margin:10px 0;border-radius:10px}
+button{background:#222;color:white;border:0;border-radius:8px}
+</style>
+</head>
+<body>
+
+<h1>ProCare Concrete</h1>
+
+<input id="name" placeholder="Job name">
+<input id="address" placeholder="Address">
+<textarea id="notes" placeholder="Notes"></textarea>
+<button onclick="addJob()">Add Job</button>
+
+<h2>Active Jobs</h2>
+<div id="active"></div>
+
+<h2>Billed Jobs</h2>
+<div id="billed"></div>
+
+<script>
+let jobs = JSON.parse(localStorage.getItem("jobs") || "[]");
+
+function save(){
+  localStorage.setItem("jobs", JSON.stringify(jobs));
+  render();
+}
+
+function addJob(){
+  if(!name.value.trim()) return alert("Add a job name");
+  jobs.push({
+    id: Date.now(),
+    name: name.value,
+    address: address.value,
+    notes: notes.value,
+    status: "Not Ready to Start"
+  });
+  name.value="";
+  address.value="";
+  notes.value="";
+  save();
+}
+
+function setStatus(id,status){
+  jobs = jobs.map(j => j.id===id ? {...j,status} : j);
+  save();
+}
+
+function render(){
+  active.innerHTML="";
+  billed.innerHTML="";
+  jobs.forEach(j=>{
+    let box=document.createElement("div");
+    box.className="card";
+    box.innerHTML=`
+      <b>${j.name}</b><br>
+      ${j.address}<br>
+      ${j.notes}<br><br>
+      ${j.status !== "Finished" ? `
+      <select onchange="setStatus(${j.id}, this.value)">
+        <option ${j.status=="Not Ready to Start"?"selected":""}>Not Ready to Start</option>
+        <option ${j.status=="Ready to Start"?"selected":""}>Ready to Start</option>
+        <option ${j.status=="Ready to Pour"?"selected":""}>Ready to Pour</option>
+        <option ${j.status=="Finished"?"selected":""}>Finished</option>
+      </select>` : `<b>Finished / Billed</b>`}
+    `;
+    if(j.status==="Finished") billed.appendChild(box);
+    else active.appendChild(box);
+  });
+}
+render();
+</script>
+
+</body>
+</html>
