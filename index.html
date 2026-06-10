@@ -6,18 +6,30 @@
 <style>
 body{font-family:Arial;padding:15px;background:#f4f4f4}
 h1{color:#222}
-input,textarea,button,select{width:100%;padding:12px;margin:6px 0;font-size:16px}
+input,textarea,button{width:100%;padding:12px;margin:6px 0;font-size:16px}
 .card{background:white;padding:12px;margin:10px 0;border-radius:10px}
 button{background:#222;color:white;border:0;border-radius:8px}
+.statusButtons button{margin:4px 0}
+.selected{background:#0b7cff!important}
+.smallBtn{font-size:14px;padding:10px}
 </style>
 </head>
 <body>
 
 <h1>ProCare Concrete</h1>
 
-<input id="name" placeholder="Job name">
-<input id="address" placeholder="Address">
-<textarea id="notes" placeholder="Notes"></textarea>
+<input id="jobName" placeholder="Job name">
+<input id="jobAddress" placeholder="Address">
+<textarea id="jobNotes" placeholder="Notes"></textarea>
+
+<h3>Pick Job Status</h3>
+<div class="statusButtons">
+<button onclick="chooseStatus('Not Ready to Start')" id="btnNotReady">Not Ready to Start</button>
+<button onclick="chooseStatus('Ready to Start')" id="btnReadyStart">Ready to Start</button>
+<button onclick="chooseStatus('Ready to Pour')" id="btnReadyPour">Ready to Pour</button>
+<button onclick="chooseStatus('Finished')" id="btnFinished">Finished</button>
+</div>
+
 <button onclick="addJob()">Add Job</button>
 
 <h2>Active Jobs</h2>
@@ -28,6 +40,21 @@ button{background:#222;color:white;border:0;border-radius:8px}
 
 <script>
 let jobs = JSON.parse(localStorage.getItem("jobs") || "[]");
+let pickedStatus = "Not Ready to Start";
+
+function chooseStatus(status){
+  pickedStatus = status;
+
+  document.getElementById("btnNotReady").classList.remove("selected");
+  document.getElementById("btnReadyStart").classList.remove("selected");
+  document.getElementById("btnReadyPour").classList.remove("selected");
+  document.getElementById("btnFinished").classList.remove("selected");
+
+  if(status === "Not Ready to Start") document.getElementById("btnNotReady").classList.add("selected");
+  if(status === "Ready to Start") document.getElementById("btnReadyStart").classList.add("selected");
+  if(status === "Ready to Pour") document.getElementById("btnReadyPour").classList.add("selected");
+  if(status === "Finished") document.getElementById("btnFinished").classList.add("selected");
+}
 
 function save(){
   localStorage.setItem("jobs", JSON.stringify(jobs));
@@ -35,17 +62,28 @@ function save(){
 }
 
 function addJob(){
-  if(!name.value.trim()) return alert("Add a job name");
+  const jobName = document.getElementById("jobName");
+  const jobAddress = document.getElementById("jobAddress");
+  const jobNotes = document.getElementById("jobNotes");
+
+  if(!jobName.value.trim()){
+    alert("Add a job name");
+    return;
+  }
+
   jobs.push({
     id: Date.now(),
-    name: name.value,
-    address: address.value,
-    notes: notes.value,
-    status: "Not Ready to Start"
+    name: jobName.value,
+    address: jobAddress.value,
+    notes: jobNotes.value,
+    status: pickedStatus
   });
-  name.value="";
-  address.value="";
-  notes.value="";
+
+  jobName.value = "";
+  jobAddress.value = "";
+  jobNotes.value = "";
+  pickedStatus = "Not Ready to Start";
+  chooseStatus("Not Ready to Start");
   save();
 }
 
@@ -55,8 +93,9 @@ function setStatus(id,status){
 }
 
 function render(){
-  active.innerHTML="";
-  billed.innerHTML="";
+  document.getElementById("active").innerHTML="";
+  document.getElementById("billed").innerHTML="";
+
   jobs.forEach(j=>{
     let box=document.createElement("div");
     box.className="card";
@@ -64,18 +103,24 @@ function render(){
       <b>${j.name}</b><br>
       ${j.address}<br>
       ${j.notes}<br><br>
+      <b>Status:</b> ${j.status}<br><br>
       ${j.status !== "Finished" ? `
-      <select onchange="setStatus(${j.id}, this.value)">
-        <option ${j.status=="Not Ready to Start"?"selected":""}>Not Ready to Start</option>
-        <option ${j.status=="Ready to Start"?"selected":""}>Ready to Start</option>
-        <option ${j.status=="Ready to Pour"?"selected":""}>Ready to Pour</option>
-        <option ${j.status=="Finished"?"selected":""}>Finished</option>
-      </select>` : `<b>Finished / Billed</b>`}
+        <button class="smallBtn" onclick="setStatus(${j.id}, 'Not Ready to Start')">Not Ready to Start</button>
+        <button class="smallBtn" onclick="setStatus(${j.id}, 'Ready to Start')">Ready to Start</button>
+        <button class="smallBtn" onclick="setStatus(${j.id}, 'Ready to Pour')">Ready to Pour</button>
+        <button class="smallBtn" onclick="setStatus(${j.id}, 'Finished')">Finished</button>
+      ` : `<b>Finished / Billed</b>`}
     `;
-    if(j.status==="Finished") billed.appendChild(box);
-    else active.appendChild(box);
+
+    if(j.status==="Finished"){
+      document.getElementById("billed").appendChild(box);
+    } else {
+      document.getElementById("active").appendChild(box);
+    }
   });
 }
+
+chooseStatus("Not Ready to Start");
 render();
 </script>
 
