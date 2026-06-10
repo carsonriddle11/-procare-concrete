@@ -10,6 +10,7 @@ input,textarea,button{width:100%;padding:12px;margin:6px 0;font-size:16px}
 button{background:#222;color:white;border:0;border-radius:8px}
 .smallBtn{font-size:14px;padding:10px}
 .section{margin-top:25px}
+summary{font-size:16px;cursor:pointer;margin-top:8px}
 </style>
 </head>
 <body>
@@ -29,16 +30,7 @@ button{background:#222;color:white;border:0;border-radius:8px}
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import {
-  getFirestore,
-  collection,
-  addDoc,
-  onSnapshot,
-  doc,
-  updateDoc,
-  deleteDoc,
-  serverTimestamp
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, deleteDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDOpz94EHYU-cnj_H44DqEgV496OvgJ4SE",
@@ -78,10 +70,8 @@ window.addJob = async function(){
 
 window.setStatus = async function(id, oldStatus, newStatus, jobName){
   if(oldStatus !== newStatus){
-    const confirmChange = confirm(
-      `Are you sure you want to change "${jobName}" from "${oldStatus}" to "${newStatus}"?`
-    );
-    if(!confirmChange) return;
+    const ok = confirm(`Are you sure you want to change "${jobName}" from "${oldStatus}" to "${newStatus}"?`);
+    if(!ok) return;
   }
 
   await updateDoc(doc(db, "jobs", id), {
@@ -95,22 +85,44 @@ window.deleteJob = async function(id, jobName){
   }
 };
 
+function safeText(text){
+  return String(text || "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
 function jobCard(id, j){
   const box = document.createElement("div");
   box.className = "card";
-  box.innerHTML = `
-    <b>${j.name}</b><br>
-    ${j.address || ""}<br>
-    ${j.notes || ""}<br><br>
-    <b>Status:</b> ${j.status}<br><br>
 
-    <button class="smallBtn" onclick="setStatus('${id}', '${j.status}', 'Not Ready to Start', '${j.name}')">Not Ready</button>
-    <button class="smallBtn" onclick="setStatus('${id}', '${j.status}', 'Ready to Start', '${j.name}')">Ready to Start</button>
-    <button class="smallBtn" onclick="setStatus('${id}', '${j.status}', 'Ready to Pour', '${j.name}')">Ready to Pour</button>
-    <button class="smallBtn" onclick="setStatus('${id}', '${j.status}', 'Finished', '${j.name}')">Finished</button>
-    <button class="smallBtn" onclick="setStatus('${id}', '${j.status}', 'Billed', '${j.name}')">Billed</button>
-    <button class="smallBtn" onclick="deleteJob('${id}', '${j.name}')">Delete Job</button>
+  const name = safeText(j.name);
+  const address = safeText(j.address);
+  const notes = safeText(j.notes);
+  const status = safeText(j.status);
+
+  box.innerHTML = `
+    <b>${name}</b><br>
+    ${address}<br>
+    <b>Status:</b> ${status}
+
+    <details>
+      <summary>Tap to open details</summary>
+      <br>
+      <b>Notes:</b><br>
+      ${notes}<br><br>
+
+      <button class="smallBtn" onclick="setStatus('${id}', '${status}', 'Not Ready to Start', '${name}')">Not Ready</button>
+      <button class="smallBtn" onclick="setStatus('${id}', '${status}', 'Ready to Start', '${name}')">Ready to Start</button>
+      <button class="smallBtn" onclick="setStatus('${id}', '${status}', 'Ready to Pour', '${name}')">Ready to Pour</button>
+      <button class="smallBtn" onclick="setStatus('${id}', '${status}', 'Finished', '${name}')">Finished</button>
+      <button class="smallBtn" onclick="setStatus('${id}', '${status}', 'Billed', '${name}')">Billed</button>
+      <button class="smallBtn" onclick="deleteJob('${id}', '${name}')">Delete Job</button>
+    </details>
   `;
+
   return box;
 }
 
@@ -125,11 +137,11 @@ onSnapshot(jobsRef, (snapshot) => {
     const j = docSnap.data();
     const card = jobCard(docSnap.id, j);
 
-    if(j.status === "Not Ready to Start") notReady.appendChild(card);
-    if(j.status === "Ready to Start") readyStart.appendChild(card);
-    if(j.status === "Ready to Pour") readyPour.appendChild(card);
-    if(j.status === "Finished") finished.appendChild(card);
-    if(j.status === "Billed") billed.appendChild(card);
+    if(j.status === "Not Ready to Start") document.getElementById("notReady").appendChild(card);
+    if(j.status === "Ready to Start") document.getElementById("readyStart").appendChild(card);
+    if(j.status === "Ready to Pour") document.getElementById("readyPour").appendChild(card);
+    if(j.status === "Finished") document.getElementById("finished").appendChild(card);
+    if(j.status === "Billed") document.getElementById("billed").appendChild(card);
   });
 });
 </script>
