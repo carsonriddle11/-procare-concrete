@@ -9,9 +9,8 @@ h1{color:#222}
 input,textarea,button{width:100%;padding:12px;margin:6px 0;font-size:16px}
 .card{background:white;padding:12px;margin:10px 0;border-radius:10px}
 button{background:#222;color:white;border:0;border-radius:8px}
-.statusButtons button{margin:4px 0}
-.selected{background:#0b7cff!important}
 .smallBtn{font-size:14px;padding:10px}
+.section{margin-top:25px}
 </style>
 </head>
 <body>
@@ -21,40 +20,16 @@ button{background:#222;color:white;border:0;border-radius:8px}
 <input id="jobName" placeholder="Job name">
 <input id="jobAddress" placeholder="Address">
 <textarea id="jobNotes" placeholder="Notes"></textarea>
-
-<h3>Pick Job Status</h3>
-<div class="statusButtons">
-<button onclick="chooseStatus('Not Ready to Start')" id="btnNotReady">Not Ready to Start</button>
-<button onclick="chooseStatus('Ready to Start')" id="btnReadyStart">Ready to Start</button>
-<button onclick="chooseStatus('Ready to Pour')" id="btnReadyPour">Ready to Pour</button>
-<button onclick="chooseStatus('Finished')" id="btnFinished">Finished</button>
-</div>
-
 <button onclick="addJob()">Add Job</button>
 
-<h2>Active Jobs</h2>
-<div id="active"></div>
-
-<h2>Billed Jobs</h2>
-<div id="billed"></div>
+<div class="section"><h2>Not Ready to Start</h2><div id="notReady"></div></div>
+<div class="section"><h2>Ready to Start</h2><div id="readyStart"></div></div>
+<div class="section"><h2>Ready to Pour</h2><div id="readyPour"></div></div>
+<div class="section"><h2>Finished</h2><div id="finished"></div></div>
+<div class="section"><h2>Billed</h2><div id="billed"></div></div>
 
 <script>
 let jobs = JSON.parse(localStorage.getItem("jobs") || "[]");
-let pickedStatus = "Not Ready to Start";
-
-function chooseStatus(status){
-  pickedStatus = status;
-
-  document.getElementById("btnNotReady").classList.remove("selected");
-  document.getElementById("btnReadyStart").classList.remove("selected");
-  document.getElementById("btnReadyPour").classList.remove("selected");
-  document.getElementById("btnFinished").classList.remove("selected");
-
-  if(status === "Not Ready to Start") document.getElementById("btnNotReady").classList.add("selected");
-  if(status === "Ready to Start") document.getElementById("btnReadyStart").classList.add("selected");
-  if(status === "Ready to Pour") document.getElementById("btnReadyPour").classList.add("selected");
-  if(status === "Finished") document.getElementById("btnFinished").classList.add("selected");
-}
 
 function save(){
   localStorage.setItem("jobs", JSON.stringify(jobs));
@@ -76,14 +51,12 @@ function addJob(){
     name: jobName.value,
     address: jobAddress.value,
     notes: jobNotes.value,
-    status: pickedStatus
+    status: "Not Ready to Start"
   });
 
   jobName.value = "";
   jobAddress.value = "";
   jobNotes.value = "";
-  pickedStatus = "Not Ready to Start";
-  chooseStatus("Not Ready to Start");
   save();
 }
 
@@ -92,35 +65,48 @@ function setStatus(id,status){
   save();
 }
 
+function deleteJob(id){
+  if(confirm("Delete this job?")){
+    jobs = jobs.filter(j => j.id !== id);
+    save();
+  }
+}
+
+function jobCard(j){
+  let box=document.createElement("div");
+  box.className="card";
+  box.innerHTML=`
+    <b>${j.name}</b><br>
+    ${j.address}<br>
+    ${j.notes}<br><br>
+    <b>Status:</b> ${j.status}<br><br>
+
+    <button class="smallBtn" onclick="setStatus(${j.id}, 'Not Ready to Start')">Not Ready</button>
+    <button class="smallBtn" onclick="setStatus(${j.id}, 'Ready to Start')">Ready to Start</button>
+    <button class="smallBtn" onclick="setStatus(${j.id}, 'Ready to Pour')">Ready to Pour</button>
+    <button class="smallBtn" onclick="setStatus(${j.id}, 'Finished')">Finished</button>
+    <button class="smallBtn" onclick="setStatus(${j.id}, 'Billed')">Billed</button>
+    <button class="smallBtn" onclick="deleteJob(${j.id})">Delete Job</button>
+  `;
+  return box;
+}
+
 function render(){
-  document.getElementById("active").innerHTML="";
-  document.getElementById("billed").innerHTML="";
+  notReady.innerHTML="";
+  readyStart.innerHTML="";
+  readyPour.innerHTML="";
+  finished.innerHTML="";
+  billed.innerHTML="";
 
   jobs.forEach(j=>{
-    let box=document.createElement("div");
-    box.className="card";
-    box.innerHTML=`
-      <b>${j.name}</b><br>
-      ${j.address}<br>
-      ${j.notes}<br><br>
-      <b>Status:</b> ${j.status}<br><br>
-      ${j.status !== "Finished" ? `
-        <button class="smallBtn" onclick="setStatus(${j.id}, 'Not Ready to Start')">Not Ready to Start</button>
-        <button class="smallBtn" onclick="setStatus(${j.id}, 'Ready to Start')">Ready to Start</button>
-        <button class="smallBtn" onclick="setStatus(${j.id}, 'Ready to Pour')">Ready to Pour</button>
-        <button class="smallBtn" onclick="setStatus(${j.id}, 'Finished')">Finished</button>
-      ` : `<b>Finished / Billed</b>`}
-    `;
-
-    if(j.status==="Finished"){
-      document.getElementById("billed").appendChild(box);
-    } else {
-      document.getElementById("active").appendChild(box);
-    }
+    if(j.status==="Not Ready to Start") notReady.appendChild(jobCard(j));
+    if(j.status==="Ready to Start") readyStart.appendChild(jobCard(j));
+    if(j.status==="Ready to Pour") readyPour.appendChild(jobCard(j));
+    if(j.status==="Finished") finished.appendChild(jobCard(j));
+    if(j.status==="Billed") billed.appendChild(jobCard(j));
   });
 }
 
-chooseStatus("Not Ready to Start");
 render();
 </script>
 
